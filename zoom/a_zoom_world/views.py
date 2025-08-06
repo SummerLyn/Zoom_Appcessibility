@@ -7,6 +7,8 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from .forms import *
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 
 from PIL import Image
 
@@ -103,21 +105,43 @@ def zoom_user(request):
     return render(request, 'zoom_user_profile.html', user_profile)
 
 
+@cache_page(60 * 15)  # Cache for 15 minutes
+@vary_on_cookie
 @login_required(login_url='/')
 def properties_listing(request):
-    # main list of properties
-    # we want to fetch all properties from database and pass to template"
-    listings = Property.objects.all()
-    for i in listings:
-        i.picture = i.photo_property.get(featured=True)
+    # Optimized query to prevent N+1 queries
+    # Use select_related for foreign keys and prefetch_related for many-to-many
+    listings = Property.objects.select_related(
+        'type_id', 'address'
+    ).prefetch_related(
+        'photo_property'
+    ).all()
+    
+    # Pre-fetch featured photos to avoid additional queries in template
+    for property_item in listings:
+        try:
+            property_item.picture = property_item.photo_property.filter(featured=True).first()
+        except:
+            property_item.picture = None
 
     return render(request, 'homepage_properties.html', {'listing': listings})
 
 
+@cache_page(60 * 30)  # Cache for 30 minutes
 @login_required(login_url='/')
 def property_description(request, property_id):
-    property_info = Property.objects.get(pk=property_id)
-    feature_photo = property_info.photo_property.get(featured=True)
+    # Optimized query with select_related
+    property_info = Property.objects.select_related(
+        'type_id', 'address'
+    ).prefetch_related(
+        'photo_property', 'property_amenity', 'property_allergens', 
+        'property_vehicle', 'property_access'
+    ).get(pk=property_id)
+    
+    try:
+        feature_photo = property_info.photo_property.filter(featured=True).first()
+    except:
+        feature_photo = None
 
     return render(request, 'big_description.html', {'property': property_info, 'feature_photo': feature_photo})
 
@@ -129,27 +153,30 @@ def new_listing(request):
     return render(request, 'new_listing.html')
 
 
+@cache_page(60 * 30)  # Cache for 30 minutes
 @login_required(login_url='/')
 def property_gallery_page(request, property_id):
-    photo_gallery = Photo.objects.filter(property_photos__pk=property_id)
-    for i in photo_gallery:
-        i.picture = i.photo
-
+    # Optimized query to get photos directly
+    photo_gallery = Photo.objects.filter(
+        property_photos__pk=property_id
+    ).select_related().all()
+    
     return render(request, 'property_gallery.html', {'photo_gallery': photo_gallery, 'property_id': property_id})
 
 
+@cache_page(60 * 60)  # Cache for 1 hour
 def about_us(request):
     return render(request, 'about_us.html')
 
-
+@cache_page(60 * 60)  # Cache for 1 hour
 def contact_us(request):
     return render(request, 'contact_us.html')
 
-
+@cache_page(60 * 60)  # Cache for 1 hour
 def privacy_policy(request):
     return render(request, 'privacy_policy.html')
 
-
+@cache_page(60 * 60)  # Cache for 1 hour
 def terms_of_use(request):
     return render(request, 'terms_of_use.html')
 

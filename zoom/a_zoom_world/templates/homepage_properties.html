@@ -2,11 +2,24 @@
 
 {% block zoom_content %}
 
-
     {% for property in listing %}
-        <div>
-           <a href="{% url 'property_gallery' property.id %}"><img src='{{ property.picture.photo.url }}' alt="The feature photo of the property" width=150, height=150 /></a>
-           <a href="{% url 'property_description' property.id %}"> <h2> {{ property.title }}  </h2> </a>
+        <div class="property-item">
+           <a href="{% url 'property_gallery' property.id %}">
+               {% if property.picture %}
+                   <img src='{{ property.picture.photo.url }}' 
+                        alt="Feature photo of {{ property.title }}" 
+                        width="150" height="150" 
+                        loading="lazy"
+                        style="object-fit: cover;" />
+               {% else %}
+                   <div class="no-image-placeholder" style="width: 150px; height: 150px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                       No Image
+                   </div>
+               {% endif %}
+           </a>
+           <a href="{% url 'property_description' property.id %}"> 
+               <h2> {{ property.title }}  </h2> 
+           </a>
 
             <section class="listing">
             <ul>
@@ -25,6 +38,8 @@
             <li> {{ property.access_num_bathroom}} / {{ property.num_bathroom }}</li>
             </ul>
         </div>
+    {% empty %}
+        <p>No properties available at this time.</p>
     {% endfor %}
 {% endblock %}
 

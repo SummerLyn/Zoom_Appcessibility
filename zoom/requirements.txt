@@ -1,4 +1,20 @@
-Django==1.8
-Pillow==2.9.0
-psycopg2==2.6.1
-virtualenv==13.1.2
+# Core Django and database
+Django==3.2.23  # LTS version with security updates
+psycopg2-binary==2.9.9  # Updated PostgreSQL adapter
+Pillow==10.1.0  # Updated image processing
+
+# Performance and caching
+django-redis==5.4.0  # Redis cache backend
+django-compressor==4.4  # CSS/JS compression
+django-htmlmin==0.11.0  # HTML minification
+
+# Production server
+gunicorn==21.2.0  # WSGI server
+whitenoise==6.6.0  # Static file serving
+
+# Development tools (optional)
+django-debug-toolbar==4.2.0  # Development debugging
+django-extensions==3.2.3  # Additional management commands
+
+# Security
+django-cors-headers==4.3.1  # CORS handling
